@@ -1,47 +1,102 @@
-## Phase 0 — Fix what's broken
 
-1. [ ] **Cell 13.** Replace `pd.get_dummies(test_data[test_data.columns])` with `pd.get_dummies(test_data[features])`. Then delete `Name` from `features`. Your "only one survived" note in cell 14 is a misdiagnosis of this bug — rewrite that markdown once you see the real output.
-2. [ ] **Cell 5.** `extract_title` takes the first token ending in `.`, which misfires on middle initials. Use `re.search(r',\s*([^.]+)\.', name).group(1).strip()`.
-3. [ ] **Cell 19.** Add the missing `X_test.reindex(columns=X.columns, fill_value=0)`. It works today by luck.
-4. [ ] **Collapse rare titles.** Map anything outside `{Mr, Mrs, Miss, Master}` to `Rare`. Test contains `Dona`, absent from train, currently silently zeroed by `reindex`.
-5. [ ] **Delete `submission1/2/3.csv` reads.** Printing the predicted survival rate back from a CSV you just wrote is a no-op. Compute it from `predictions` if you want it at all.
+# Titanic ML Project — TODO
 
-## Phase 1 — Validation (the part that actually matters)
+## 0. Setup
 
-6. [ ] Set up `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` once, reuse everywhere.
-7. [ ] Wrap all preprocessing in a `sklearn.pipeline.Pipeline` with `ColumnTransformer`. Right now your title medians and imputation values are computed on the full train set *before* CV splits — that's leakage into every fold. This is the most substantive methodological error in the notebook and the one most worth writing about.
-8. [ ] Score every model with `cross_val_score` on that pipeline. Report **mean ± std**, not just mean. The std is what tells you whether a 0.815 vs 0.821 difference means anything.
-9. [ ] Hold out a stratified 20% test split that you touch **once**, at the very end. Not for tuning.
-1. [ ] Add a naive baseline: `Sex == female → survived`. It scores ~0.78. Every subsequent model must beat it, and you should say so explicitly.
+- [X] Create GitHub repo `titanic-survival-prediction` (public)
+- [X] `git init`, add `.gitignore` (Python template), `LICENSE` (MIT)
+- [X] Create venv / conda env; `requirements.txt` with pinned versions
+- [X] Folder structure:
+  ```
+  data/raw  data/processed  notebooks/  src/  models/  reports/figures/
+  ```
+- [X] Download `train.csv` / `test.csv` from Kaggle → `data/raw/`
+- [X] Add `data/` to `.gitignore`, but commit a `data/README.md` explaining how to fetch it
 
-## Phase 2 — Features worth building
+## 1. EDA (`notebooks/01_eda.ipynb`)
 
-1. [ ] `FamilySize = SibSp + Parch + 1` and `IsAlone`. Survival is non-monotonic in family size — small families fared best, large ones badly.
-1. [ ] **Ticket group size.** Count passengers sharing a ticket number *across train+test combined* (this is legitimate — ticket IDs aren't the target). Groups survived or died together. This is where the real signal lives.
-1. [ ] `FarePerPerson = Fare / TicketGroupSize`. Raw `Fare` is per-ticket, not per-passenger — a family of six paying £60 is not wealthy.
-1. [ ] `Deck` from the first letter of `Cabin`, with `Unknown` as its own level. Keep `HasCabin` too; test whether `Deck` adds anything over it.
-1. [ ] Age × Pclass interaction, or just let the tree find it. Test both, report the difference.
-1. [ ] **Kill the Spearman feature selection (cell 16).** It's the wrong tool for a tree — it can't see interactions, and `Sex_female` / `Sex_male` appearing as separate rows with identical correlation is a tell that you're ranking redundant columns. Replace with permutation importance on held-out folds. Keep the old analysis in the notebook and write a paragraph on *why* you abandoned it. That paragraph is worth more than the model.
+- [X] Shape, dtypes, `.describe()`, missing-value counts
+- [X] Target balance (survival rate ≈ 38%)
+- [X] Univariate: Age, Fare distributions (log-transform Fare?)
+- [X] Bivariate vs. target: Sex, Pclass, Embarked, SibSp, Parch, Age bins
+- [ ] Correlation heatmap (numeric only)
+- [ ] Write down 5 concrete hypotheses you'll test with features
+- [ ] Save every figure to `reports/figures/`
 
-## Phase 3 — Modeling
+## 2. Preprocessing & Feature Engineering (`src/features.py`)
 
-1. [ ] Compare on identical CV folds: Logistic Regression (scaled), RandomForest, GradientBoosting or XGBoost. Three models, one table, mean ± std.
-1. [ ] `GridSearchCV` or `RandomizedSearchCV` over `max_depth`, `min_samples_leaf`, `max_features` — **nested inside CV**, or your reported score is optimistic.
-1. [ ] Plot a validation curve for `max_depth`. Show the overfitting elbow. Your current `max_depth=5` is an unjustified guess; make it a justified one.
-2. [ ] Skip the ensemble/stacking. It'll buy you 0.003 and reads as cargo-culting.
+- [ ] Missing values: Age (median by Title/Pclass, not global), Embarked (mode), Fare (median), Cabin (mostly missing → derive `HasCabin` / `Deck` letter)
+- [ ] Extract `Title` from Name (Mr, Mrs, Miss, Master, rare→"Other")
+- [ ] `FamilySize = SibSp + Parch + 1`, `IsAlone`
+- [ ] `Deck` from Cabin first letter
+- [ ] `TicketPrefix` / group-ticket size (people sharing a ticket)
+- [ ] `FarePerPerson = Fare / ticket group size`
+- [ ] Binning: `AgeBin`, `FareBin` (optional, test both)
+- [ ] Encode: one-hot for low-cardinality, ordinal where ordered
+- [ ] Scale numerics (needed for LR/SVM/KNN, not trees)
+- [ ] **Wrap all of this in an sklearn `Pipeline` + `ColumnTransformer`** — this is what interviewers look for
+- [ ] Drop leakage risk: never fit imputers/scalers on the full dataset before splitting
 
-## Phase 4 — Error analysis (the section nobody writes, and the reason to hire you)
+## 3. Validation Strategy
 
-2. [ ] Confusion matrix, precision, recall, ROC-AUC — not just accuracy. Accuracy on a 38/62 split is a weak summary.
-2. [ ] Pull the ~60 misclassified passengers. Look at them individually. Patterns: 3rd-class women who died, 1st-class men who survived. Name three.
-2. [ ] Calibration plot. Is `predict_proba` meaningful, or is your forest overconfident?
-2. [ ] Write out where the model would fail if deployed. It has no `Cabin` for 77% of passengers; it can't see who was near a lifeboat; it's fit on 891 rows and every "improvement" past ~0.82 is noise.
+- [ ] `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`
+- [ ] Decide metric: accuracy (Kaggle's metric) + report ROC-AUC, precision/recall, F1
+- [ ] Build a `evaluate_model(pipeline, X, y)` helper that returns mean ± std CV score
+- [ ] **Baseline first**: predict "all female survive" → record the number. Beat it or explain why not.
 
-## Phase 5 — Making it a portfolio artifact
+## 4. Modeling (`notebooks/03_models.ipynb`, `src/train.py`)
 
-2. [ ] Get it out of a single notebook. `src/features.py`, `src/model.py`, thin notebook that imports them. A 20-cell linear notebook says "I did a tutorial." A module + notebook says "I ship code."
-2. [ ] `README.md`: the problem, your approach, the results table, **what you'd do differently**. Two hundred words. Recruiters read this and nothing else.
-2. [ ] `requirements.txt`, pinned. Set `random_state` everywhere. Someone should be able to clone and reproduce your exact numbers.
-2. [ ] Three or four charts, captioned, that each make one point. Not a wall of seaborn.
-2. [ ] Write the limitations section honestly. "I got 0.82, which is within noise of the 0.79 sex-only baseline on a 418-row test set" is a *stronger* signal than claiming 0.85.
-3. [ ] Then stop and build something with a dataset that isn't Titanic. One rigorous Titanic + one original project beats five tutorials.
+- [ ] Logistic Regression (interpretable baseline)
+- [ ] Random Forest
+- [ ] Gradient Boosting: XGBoost / LightGBM / CatBoost (pick one, do it well)
+- [ ] SVM (RBF) — optional
+- [ ] Compare all in a single results table (model | CV mean | CV std | fit time)
+- [ ] Hyperparameter tuning: `RandomizedSearchCV` or Optuna on the top 2 models
+- [ ] Soft-voting / stacking ensemble of the best 2–3
+- [ ] Fix `random_state` everywhere
+
+## 5. Interpretation (this is what separates you)
+
+- [ ] Confusion matrix + ROC curve + precision-recall curve
+- [ ] Permutation importance (not just `.feature_importances_`)
+- [ ] SHAP: summary plot + 2 force plots on individual passengers
+- [ ] Learning curve → are you over/underfitting? Would more data help?
+- [ ] Error analysis: pull 10 misclassified passengers, look for a pattern, write a paragraph
+- [ ] Calibration curve (optional but impressive)
+
+## 6. Submission
+
+- [ ] Retrain best pipeline on full train set
+- [ ] Predict on `test.csv`, write `submission.csv` (`PassengerId,Survived`)
+- [ ] Submit to Kaggle, record leaderboard score in README
+- [ ] Sanity-check: your CV score should be within ~2-3% of LB. If not, investigate (likely overfitting to CV or a leak)
+- [ ] Target: ~0.78–0.80. **Do not chase 0.85+** — those scores come from leaking the public test labels, and recruiters know it.
+
+## 7. Code Quality
+
+- [ ] Move logic out of notebooks into `src/` modules; notebooks only orchestrate + visualize
+- [ ] Type hints + docstrings on public functions
+- [ ] `black` + `ruff` (or `flake8`)
+- [ ] 3–5 `pytest` tests (e.g. feature function output shape, no NaNs after transform)
+- [ ] `Makefile` or `run.sh`: `make train`, `make predict`
+- [ ] Config in `config.yaml`, not hardcoded constants
+- [ ] Optional but strong: GitHub Actions running lint + tests on push
+
+## 8. README (the most-read file in your repo)
+
+- [ ] One-line project description + LB score badge at the top
+- [ ] Problem statement
+- [ ] Repo structure tree
+- [ ] Setup instructions (`pip install -r requirements.txt`, how to get data)
+- [ ] Results table (models × CV score × LB score)
+- [ ] 2–3 embedded key figures (SHAP summary, confusion matrix)
+- [ ] "Key findings" — 3 bullets in plain English (e.g. "Title extracted from Name was the 3rd most important feature")
+- [ ] "What I'd do next" section
+- [ ] Keep it under 2 screens of scrolling
+
+## 9. Portfolio Polish
+
+- [ ] Clear commit history (not one giant "final commit")
+- [ ] Pin the repo on your GitHub profile
+- [ ] Optional: write a short blog post / LinkedIn post about one thing you learned
+- [ ] Optional: deploy a Streamlit/Gradio demo where someone enters passenger details and gets a prediction
