@@ -29,8 +29,6 @@
 - [X] Extract `Title` from Name (Mr, Mrs, Miss, Master, rare→"Other")
 - [X] `FamilySize = SibSp + Parch + 1`, `IsAlone`
 - [X] `Deck` from Cabin first letter
-- [ ] `TicketPrefix` / group-ticket size (people sharing a ticket)
-- [ ] `FarePerPerson = Fare / ticket group size`
 - [X] Binning: `AgeBin`, `FareBin` (optional, test both)
 - [ ] Encode: one-hot for low-cardinality, ordinal where ordered
 - [ ] Scale numerics (needed for LR/SVM/KNN, not trees)
