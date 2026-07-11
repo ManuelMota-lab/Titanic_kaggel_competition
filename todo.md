@@ -25,13 +25,13 @@
 
 ## 2. Preprocessing & Feature Engineering (`src/features.py`)
 
-- [ ] Missing values: Age (median by Title/Pclass, not global), Embarked (mode), Fare (median), Cabin (mostly missing → derive `HasCabin` / `Deck` letter)
-- [ ] Extract `Title` from Name (Mr, Mrs, Miss, Master, rare→"Other")
-- [ ] `FamilySize = SibSp + Parch + 1`, `IsAlone`
-- [ ] `Deck` from Cabin first letter
+- [X] Missing values: Age (median by Title/Pclass, not global), Embarked (mode), Fare (median), Cabin (mostly missing → derive `HasCabin` / `Deck` letter)
+- [X] Extract `Title` from Name (Mr, Mrs, Miss, Master, rare→"Other")
+- [X] `FamilySize = SibSp + Parch + 1`, `IsAlone`
+- [X] `Deck` from Cabin first letter
 - [ ] `TicketPrefix` / group-ticket size (people sharing a ticket)
 - [ ] `FarePerPerson = Fare / ticket group size`
-- [ ] Binning: `AgeBin`, `FareBin` (optional, test both)
+- [X] Binning: `AgeBin`, `FareBin` (optional, test both)
 - [ ] Encode: one-hot for low-cardinality, ordinal where ordered
 - [ ] Scale numerics (needed for LR/SVM/KNN, not trees)
 - [ ] **Wrap all of this in an sklearn `Pipeline` + `ColumnTransformer`** — this is what interviewers look for
