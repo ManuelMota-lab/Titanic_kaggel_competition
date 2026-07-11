@@ -20,7 +20,7 @@
 - [X] Univariate: Age, Fare distributions (log-transform Fare?)
 - [X] Bivariate vs. target: Sex, Pclass, Embarked, SibSp, Parch, Age bins
 - [ ] Correlation heatmap (numeric only)
-- [ ] Write down 5 concrete hypotheses you'll test with features
+- [X] Write down 5 concrete hypotheses you'll test with features
 - [ ] Save every figure to `reports/figures/`
 
 ## 2. Preprocessing & Feature Engineering (`src/features.py`)
