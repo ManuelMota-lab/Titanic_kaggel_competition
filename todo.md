@@ -30,28 +30,28 @@
 - [X] `FamilySize = SibSp + Parch + 1`, `IsAlone`
 - [X] `Deck` from Cabin first letter
 - [X] Binning: `AgeBin`, `FareBin` (optional, test both)
-- [ ] Encode: one-hot for low-cardinality, ordinal where ordered
-- [ ] Scale numerics (needed for LR/SVM/KNN, not trees)
+- [X] Encode: one-hot for low-cardinality, ordinal where ordered
+- [X] Scale numerics (needed for LR/SVM/KNN, not trees)
 - [ ] **Wrap all of this in an sklearn `Pipeline` + `ColumnTransformer`** — this is what interviewers look for
-- [ ] Drop leakage risk: never fit imputers/scalers on the full dataset before splitting
+- [X] Drop leakage risk: never fit imputers/scalers on the full dataset before splitting
 
 ## 3. Validation Strategy
 
-- [ ] `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`
+- [X] `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`
 - [ ] Decide metric: accuracy (Kaggle's metric) + report ROC-AUC, precision/recall, F1
-- [ ] Build a `evaluate_model(pipeline, X, y)` helper that returns mean ± std CV score
-- [ ] **Baseline first**: predict "all female survive" → record the number. Beat it or explain why not.
+- [X] Build a `evaluate_model(pipeline, X, y)` helper that returns mean ± std CV score
+- [X] **Baseline first**: predict "all female survive" → record the number. Beat it or explain why not.
 
 ## 4. Modeling (`notebooks/03_models.ipynb`, `src/train.py`)
 
-- [ ] Logistic Regression (interpretable baseline)
-- [ ] Random Forest
-- [ ] Gradient Boosting: XGBoost / LightGBM / CatBoost (pick one, do it well)
+- [X] Logistic Regression (interpretable baseline)
+- [X] Random Forest
+- [X] Gradient Boosting: XGBoost / LightGBM / CatBoost (pick one, do it well)
 - [ ] SVM (RBF) — optional
-- [ ] Compare all in a single results table (model | CV mean | CV std | fit time)
-- [ ] Hyperparameter tuning: `RandomizedSearchCV` or Optuna on the top 2 models
+- [X] Compare all in a single results table (model | CV mean | CV std | fit time)
+- [X] Hyperparameter tuning: `RandomizedSearchCV` or Optuna on the top 2 models
 - [ ] Soft-voting / stacking ensemble of the best 2–3
-- [ ] Fix `random_state` everywhere
+- [X] Fix `random_state` everywhere
 
 ## 5. Interpretation (this is what separates you)
 
@@ -64,11 +64,11 @@
 
 ## 6. Submission
 
-- [ ] Retrain best pipeline on full train set
-- [ ] Predict on `test.csv`, write `submission.csv` (`PassengerId,Survived`)
-- [ ] Submit to Kaggle, record leaderboard score in README
-- [ ] Sanity-check: your CV score should be within ~2-3% of LB. If not, investigate (likely overfitting to CV or a leak)
-- [ ] Target: ~0.78–0.80. **Do not chase 0.85+** — those scores come from leaking the public test labels, and recruiters know it.
+- [X] Retrain best pipeline on full train set
+- [X] Predict on `test.csv`, write `submission.csv` (`PassengerId,Survived`)
+- [X] Submit to Kaggle, record leaderboard score in README
+- [X] Sanity-check: your CV score should be within ~2-3% of LB. If not, investigate (likely overfitting to CV or a leak)
+- [X] Target: ~0.78–0.80. **Do not chase 0.85+** — those scores come from leaking the public test labels, and recruiters know it.
 
 ## 7. Code Quality
 
